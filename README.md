@@ -53,7 +53,7 @@ Drop them in. Cursor knows your stack from prompt #1.
 
 ```bash
 # Clone or download
-git clone https://github.com/irsyadbuilds/nextjs-ai-saas-cursor-rules
+git clone https://github.com/irsyad-aulia/nextjs-ai-saas-cursor-rules
 
 # Copy to your project
 cp -r .cursor/rules/ your-project/.cursor/rules/
