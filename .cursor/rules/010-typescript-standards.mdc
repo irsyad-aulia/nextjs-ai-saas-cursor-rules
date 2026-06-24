@@ -1,0 +1,42 @@
+---
+description: TypeScript strict standards and patterns for Next.js SaaS
+alwaysApply: true
+---
+
+# TypeScript Standards
+
+## Type Safety Rules
+- NEVER use `any` — use `unknown` and type narrowing
+- ALWAYS define explicit return types for functions
+- ALWAYS use `interface` for object shapes, `type` for unions
+- ALWAYS use `const` over `let` when value won't change
+- ALWAYS use `satisfies` operator for config objects
+
+## Naming Conventions
+- Components: PascalCase (`UserProfile`, `PaymentCard`)
+- Functions/variables: camelCase (`getUserById`, `isLoading`)
+- Constants: SCREAMING_SNAKE_CASE (`MAX_RETRY_COUNT`)
+- Types/Interfaces: PascalCase with descriptive names (`UserWithSubscription`)
+- Files: kebab-case (`user-profile.tsx`, `payment-service.ts`)
+
+## Pattern Rules
+- ALWAYS use Zod for runtime validation
+- ALWAYS type API responses with interfaces
+- ALWAYS use discriminated unions for state management
+- PREFER `readonly` arrays and objects when not mutated
+- ALWAYS use optional chaining `?.` over manual null checks
+
+## Example — Correct Pattern
+```typescript
+interface UserSubscription {
+  readonly userId: string
+  plan: 'free' | 'pro' | 'enterprise'
+  expiresAt: Date | null
+}
+
+async function getUserSubscription(
+  userId: string
+): Promise {
+  // implementation
+}
+```
