@@ -1,0 +1,76 @@
+---
+description: Next.js Server Actions patterns with Zod validation and error handling
+globs: ["app/**/*.ts", "actions/**/*.ts", "lib/actions/**/*.ts"]
+alwaysApply: false
+---
+
+# Server Actions Rules
+
+## File Structure
+- ALWAYS place server actions in `actions/` directory at root
+- Name files by feature: `actions/user.ts`, `actions/subscription.ts`
+- ALWAYS add `'use server'` at top of file, not per-function
+- EXPORT actions as named functions
+
+## Validation — Always Use Zod
+- ALWAYS validate ALL inputs with Zod schema before processing
+- DEFINE schema above the action function
+- RETURN typed error messages from Zod parse failures
+- NEVER trust client-sent data without validation
+
+## Return Pattern — ActionResult
+- ALWAYS return `{ success: true, data }` or `{ success: false, error }`
+- NEVER throw errors from server actions — return error objects
+- ALWAYS type the return value explicitly
+
+## Auth Check
+- ALWAYS check authentication at the START of every action
+- USE `auth()` from `@clerk/nextjs/server`
+- REDIRECT to `/sign-in` if no userId
+
+## Example — Correct Pattern
+```typescript
+'use server'
+
+import { auth } from '@clerk/nextjs/server'
+import { revalidatePath } from 'next/cache'
+import { z } from 'zod'
+import { db } from '@/lib/supabase/server'
+
+const UpdateProfileSchema = z.object({
+  name: z.string().min(2).max(50),
+  bio: z.string().max(200).optional(),
+})
+
+type ActionResult =
+  | { success: true; data: T }
+  | { success: false; error: string }
+
+export async function updateProfile(
+  input: z.infer
+): Promise> {
+  // 1. Auth check first
+  const { userId } = await auth()
+  if (!userId) return { success: false, error: 'Unauthorized' }
+
+  // 2. Validate input
+  const parsed = UpdateProfileSchema.safeParse(input)
+  if (!parsed.success) {
+    return { success: false, error: parsed.error.errors[0].message }
+  }
+
+  // 3. Execute
+  const { data, error } = await db
+    .from('profiles')
+    .update(parsed.data)
+    .eq('user_id', userId)
+    .select('id')
+    .single()
+
+  if (error) return { success: false, error: 'Failed to update profile' }
+
+  // 4. Revalidate
+  revalidatePath('/dashboard/settings')
+  return { success: true, data }
+}
+```
