@@ -1,0 +1,50 @@
+---
+description: Next.js 15 App Router conventions and patterns
+globs: ["app/**/*.tsx", "app/**/*.ts"]
+alwaysApply: false
+---
+
+# Next.js App Router Rules
+
+## Routing & Structure
+- ALWAYS use `app/` directory structure (App Router)
+- NEVER use `pages/` directory
+- Route groups: use `(groupName)` for organization without URL impact
+- Dynamic routes: `[param]` for single, `[...param]` for catch-all
+- Private folders: prefix with `_` to exclude from routing
+
+## Server vs Client Components
+- DEFAULT to Server Components — no `"use client"` unless needed
+- ADD `"use client"` ONLY for: useState, useEffect, event handlers, browser APIs
+- NEVER fetch data in Client Components — use Server Components + props
+- ALWAYS pass serializable props from Server to Client Components
+
+## Data Fetching
+- ALWAYS fetch data in Server Components using async/await
+- USE `cache()` for deduplicating requests across components
+- USE `unstable_cache()` for persistent caching with revalidation
+- ALWAYS use `revalidatePath()` or `revalidateTag()` after mutations
+
+## Metadata
+- ALWAYS export `metadata` or `generateMetadata` from page files
+- ALWAYS include `title`, `description`, and `openGraph` fields
+
+## Loading & Error States
+- ALWAYS create `loading.tsx` for route segments with data fetching
+- ALWAYS create `error.tsx` for route-level error boundaries
+- USE `not-found.tsx` for 404 handling at route level
+
+## Example — Correct Server Component
+```typescript
+// app/dashboard/page.tsx
+import { auth } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
+
+  const data = await fetchUserData(userId)
+  return 
+}
+```
