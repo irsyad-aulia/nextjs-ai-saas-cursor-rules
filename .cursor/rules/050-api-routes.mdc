@@ -1,0 +1,71 @@
+---
+description: Next.js API Route Handler patterns, error handling, and response conventions
+globs: ["app/api/**/*.ts", "app/api/**/*.tsx"]
+alwaysApply: false
+---
+
+# API Route Rules
+
+## File Conventions
+- API routes live in `app/api/[route]/route.ts`
+- Export named HTTP methods: `GET`, `POST`, `PUT`, `PATCH`, `DELETE`
+- ALWAYS use `NextRequest` and `NextResponse` from `next/server`
+
+## Response Standards
+- SUCCESS: return `NextResponse.json(data, { status: 200 })`
+- CREATED: return `NextResponse.json(data, { status: 201 })`
+- BAD REQUEST: return `NextResponse.json({ error: 'message' }, { status: 400 })`
+- UNAUTHORIZED: return `NextResponse.json({ error: 'Unauthorized' }, { status: 401 })`
+- NOT FOUND: return `NextResponse.json({ error: 'Not found' }, { status: 404 })`
+- SERVER ERROR: return `NextResponse.json({ error: 'Internal server error' }, { status: 500 })`
+
+## Auth Pattern
+- ALWAYS verify auth at top of every protected route
+- USE `auth()` from `@clerk/nextjs/server`
+
+## Validation
+- ALWAYS validate request body with Zod
+- ALWAYS validate query params before using them
+
+## Example — Correct Pattern
+```typescript
+import { auth } from '@clerk/nextjs/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { z } from 'zod'
+
+const CreatePostSchema = z.object({
+  title: z.string().min(1).max(100),
+  content: z.string().min(1),
+})
+
+export async function POST(req: NextRequest) {
+  try {
+    // 1. Auth
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // 2. Parse & validate body
+    const body = await req.json()
+    const parsed = CreatePostSchema.safeParse(body)
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.errors[0].message },
+        { status: 400 }
+      )
+    }
+
+    // 3. Business logic
+    const post = await createPost({ ...parsed.data, userId })
+
+    return NextResponse.json(post, { status: 201 })
+  } catch (error) {
+    console.error('[POST /api/posts]', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+```
