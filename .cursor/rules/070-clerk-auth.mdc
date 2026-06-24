@@ -1,0 +1,70 @@
+---
+description: Clerk authentication patterns, middleware, and user management for Next.js
+globs: ["middleware.ts", "app/**/*.ts", "app/**/*.tsx"]
+alwaysApply: false
+---
+
+# Clerk Auth Rules
+
+## Setup
+- middleware.ts MUST use `clerkMiddleware()` from `@clerk/nextjs/server`
+- ALWAYS define public routes in `createRouteMatcher()`
+- Protected routes automatically redirect to Clerk's sign-in
+
+## Server-Side Auth
+- Server components: `import { auth } from '@clerk/nextjs/server'`
+- ALWAYS destructure `userId` first, check for null immediately
+- For full user object: use `currentUser()` — only when needed (slower)
+- NEVER use `getAuth()` in App Router — use `auth()` instead
+
+## Client-Side Auth
+- USE `useAuth()` for auth state in client components
+- USE `useUser()` for user data in client components
+- USE `` for pre-built profile button
+- USE `` and `` for auth triggers
+
+## Webhooks
+- ALWAYS verify webhook signature with `svix` package
+- Webhook handler: `app/api/webhooks/clerk/route.ts`
+- Handle events: `user.created`, `user.updated`, `user.deleted`
+- SYNC user data to Supabase `profiles` table on `user.created`
+
+## Example — Correct Middleware
+```typescript
+// middleware.ts
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server'
+
+const isPublicRoute = createRouteMatcher([
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhooks(.*)',
+  '/pricing',
+])
+
+export default clerkMiddleware(async (auth, req) => {
+  if (!isPublicRoute(req)) {
+    await auth.protect()
+  }
+})
+
+export const config = {
+  matcher: ['/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)', '/(api|trpc)(.*)'],
+}
+```
+
+## Example — Protected Server Component
+```typescript
+import { auth, currentUser } from '@clerk/nextjs/server'
+import { redirect } from 'next/navigation'
+
+export default async function DashboardPage() {
+  const { userId } = await auth()
+  if (!userId) redirect('/sign-in')
+
+  // Only fetch full user when you need profile data
+  const user = await currentUser()
+
+  return 
+}
+```
