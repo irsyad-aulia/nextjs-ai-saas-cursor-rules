@@ -67,8 +67,9 @@ Open Cursor → Agent Mode → start coding. That's it.
 
 👉 **[Buy on Lemon Squeezy — $49](https://irsyadbuilds.lemonsqueezy.com)**
 
-Includes: all 15 `.mdc` files + SETUP guide + lifetime updates.
+🎉 **First 10 buyers get 30% off** — use code `EARLYBIRD30` at checkout ($34.30)
 
+Includes: all 15 `.mdc` files + SETUP guide + lifetime updates.
 ---
 
 ## Built by
